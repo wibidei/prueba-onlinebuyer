@@ -262,8 +262,10 @@ function A2A_SHARE_SAVE_options_page() {
 			$new_options['icon_size'] = ( isset( $_POST['A2A_SHARE_SAVE_icon_size'] ) ) ? $_POST['A2A_SHARE_SAVE_icon_size'] : '';
 			$new_options['button'] = ( isset( $_POST['A2A_SHARE_SAVE_button'] ) ) ? $_POST['A2A_SHARE_SAVE_button'] : '';
 			$new_options['button_custom'] = ( isset( $_POST['A2A_SHARE_SAVE_button_custom'] ) ) ? $_POST['A2A_SHARE_SAVE_button_custom'] : '';
+			$new_options['button_show_count'] = ( isset( $_POST['A2A_SHARE_SAVE_button_show_count'] ) && $_POST['A2A_SHARE_SAVE_button_show_count'] == '1' ) ? '1' : '-1';
 			$new_options['header'] = ( isset( $_POST['A2A_SHARE_SAVE_header'] ) ) ? $_POST['A2A_SHARE_SAVE_header'] : '';
 			$new_options['additional_js_variables'] = ( isset( $_POST['A2A_SHARE_SAVE_additional_js_variables'] ) ) ? trim( $_POST['A2A_SHARE_SAVE_additional_js_variables'] ) : '';
+			$new_options['additional_css'] = ( isset( $_POST['A2A_SHARE_SAVE_additional_css'] ) ) ? trim( $_POST['A2A_SHARE_SAVE_additional_css'] ) : '';
 			$new_options['custom_icons'] = ( isset( $_POST['A2A_SHARE_SAVE_custom_icons'] ) && $_POST['A2A_SHARE_SAVE_custom_icons'] == 'url' ) ? 'url' : '-1';
 			$new_options['custom_icons_url'] = ( isset( $_POST['A2A_SHARE_SAVE_custom_icons_url'] ) ) ? trailingslashit( $_POST['A2A_SHARE_SAVE_custom_icons_url'] ) : '';
 			$new_options['custom_icons_type'] = ( isset( $_POST['A2A_SHARE_SAVE_custom_icons_type'] ) ) ? $_POST['A2A_SHARE_SAVE_custom_icons_type'] : 'png';
@@ -302,7 +304,7 @@ function A2A_SHARE_SAVE_options_page() {
 				$active_services[] = $service;
 				
 				// AddToAny counter enabled?
-				if ( in_array( $service, array( 'facebook', 'twitter', 'pinterest', 'linkedin', 'reddit' ) ) ) {
+				if ( in_array( $service, array( 'facebook', 'pinterest', 'linkedin', 'reddit' ) ) ) {
 					$new_options['special_' . $service . '_options'] = array(
 						'show_count' => ( ( isset( $_POST['addtoany_' . $service . '_show_count'] ) && $_POST['addtoany_' . $service . '_show_count'] == '1') ? '1' : '-1' )
 					);
@@ -316,7 +318,7 @@ function A2A_SHARE_SAVE_options_page() {
 				'verb' => ( ( isset( $_POST['addtoany_facebook_like_verb'] ) && $_POST['addtoany_facebook_like_verb'] == 'recommend') ? 'recommend' : 'like' )
 			);
 			$new_options['special_twitter_tweet_options'] = array(
-				'show_count' => ( ( isset( $_POST['addtoany_twitter_tweet_show_count'] ) && $_POST['addtoany_twitter_tweet_show_count'] == '1' ) ? '1' : '-1' )
+				'show_count' => '-1' // Twitter doesn't provide counts anymore
 			);
 			$new_options['special_google_plusone_options'] = array(
 				'show_count' => ( ( isset( $_POST['addtoany_google_plusone_show_count'] ) && $_POST['addtoany_google_plusone_show_count'] == '1' ) ? '1' : '-1' )
@@ -395,11 +397,9 @@ function A2A_SHARE_SAVE_options_page() {
 	
 	?>
 	
-	<?php A2A_SHARE_SAVE_theme_hooks_check(); ?>
-	
 	<div class="wrap">
 	
-	<h2><?php _e( 'AddToAny Share Settings', 'add-to-any' ); ?></h2>
+	<h1><?php _e( 'AddToAny Share Settings', 'add-to-any' ); ?></h1>
 	
 	<h2 class="nav-tab-wrapper">
 		<a href="<?php echo admin_url( 'options-general.php?page=add-to-any.php' ); ?>" class="nav-tab<?php if ( 'default' == $current_screen ) echo ' nav-tab-active'; ?>"><?php esc_html_e( 'Standard' ); ?></a>
@@ -414,7 +414,7 @@ function A2A_SHARE_SAVE_options_page() {
 		
 		<?php if ( 'default' == $current_screen ) : ?>
 			<tr valign="top">
-			<th scope="row"><?php _e("Icon Size", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Icon Size", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label><input type="radio" name="A2A_SHARE_SAVE_icon_size" value="32"<?php if ( ! isset( $options['icon_size'] ) || '32' == $options['icon_size'] ) echo ' checked="checked"'; ?>> <?php _e('Large', 'add-to-any'); ?></label>
 				<br>
@@ -427,13 +427,32 @@ function A2A_SHARE_SAVE_options_page() {
 			</tr>
 			
 			<tr valign="top">
-			<th scope="row"><?php _e("Standalone Buttons", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Standalone Buttons", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<ul id="addtoany_services_sortable" class="addtoany_admin_list addtoany_override a2a_kit_size_32">
 					<li class="dummy"><img src="<?php echo $A2A_SHARE_SAVE_plugin_url_path; ?>/icons/transparent.gif" width="16" height="16" alt="" /></li>
 				</ul>
-				<p id="addtoany_services_info"><?php _e("Choose the services you want below. &nbsp;Click a chosen service again to remove. &nbsp;Reorder services by dragging and dropping as they appear above.", "add-to-any"); ?></p>
+				<p id="addtoany_services_info"><?php _e("Choose the services you want below. &nbsp;Click a chosen service again to remove. &nbsp;Reorder services by dragging and dropping as they appear above.", 'add-to-any'); ?></p>
 				<ul id="addtoany_services_selectable" class="addtoany_admin_list">
+				<?php
+					// Show all services
+					foreach ($A2A_SHARE_SAVE_services as $service_safe_name=>$site) { 
+						if ( isset( $site['href'] ) )
+							$custom_service = true;
+						else
+							$custom_service = false;
+						
+						if ( ! isset( $site['icon'] ) )
+							$site['icon'] = 'default';
+							
+						$special_service = ( in_array( $service_safe_name, array( 'facebook', 'pinterest', 'linkedin', 'reddit' ) ) ) 
+							? ' class="addtoany_special_service"' : '';
+					?>
+						<li data-addtoany-icon-name="<?php echo $site['icon']; ?>"<?php echo $special_service; ?> id="a2a_wp_<?php echo $service_safe_name; ?>" title="<?php echo $site['name']; ?>">
+							<span><img src="<?php echo (isset($site['icon_url'])) ? $site['icon_url'] : $A2A_SHARE_SAVE_plugin_url_path.'/icons/'.$site['icon'].'.png'; ?>" width="<?php echo (isset($site['icon_width'])) ? $site['icon_width'] : '16'; ?>" height="<?php echo (isset($site['icon_height'])) ? $site['icon_height'] : '16'; ?>" alt="" /><?php echo $site['name']; ?></span>
+						</li>
+				<?php
+					} ?>
 					<li id="a2a_wp_facebook_like" class="addtoany_special_service addtoany_3p_button" title="Facebook Like button">
 						<span><img src="<?php echo $A2A_SHARE_SAVE_plugin_url_path.'/icons/facebook_like.png'; ?>" width="50" height="20" alt="Facebook Like" /></span>
 					</li>
@@ -449,31 +468,12 @@ function A2A_SHARE_SAVE_options_page() {
 					<li id="a2a_wp_pinterest_pin" class="addtoany_special_service addtoany_3p_button" title="Pinterest Pin It button">
 						<span><img src="<?php echo $A2A_SHARE_SAVE_plugin_url_path.'/icons/pinterest_pin.png'; ?>" width="40" height="20" alt="Pinterest Pin It" /></span>
 					</li>
-				<?php
-					// Show all services
-					foreach ($A2A_SHARE_SAVE_services as $service_safe_name=>$site) { 
-						if ( isset( $site['href'] ) )
-							$custom_service = true;
-						else
-							$custom_service = false;
-						
-						if ( ! isset( $site['icon'] ) )
-							$site['icon'] = 'default';
-							
-						$special_service = ( in_array( $service_safe_name, array( 'facebook', 'twitter', 'pinterest', 'linkedin', 'reddit' ) ) ) 
-							? ' class="addtoany_special_service"' : '';
-					?>
-						<li data-addtoany-icon-name="<?php echo $site['icon']; ?>"<?php echo $special_service; ?> id="a2a_wp_<?php echo $service_safe_name; ?>" title="<?php echo $site['name']; ?>">
-							<span><img src="<?php echo (isset($site['icon_url'])) ? $site['icon_url'] : $A2A_SHARE_SAVE_plugin_url_path.'/icons/'.$site['icon'].'.png'; ?>" width="<?php echo (isset($site['icon_width'])) ? $site['icon_width'] : '16'; ?>" height="<?php echo (isset($site['icon_height'])) ? $site['icon_height'] : '16'; ?>" alt="" /><?php echo $site['name']; ?></span>
-						</li>
-				<?php
-					} ?>
 				</ul>
 			</fieldset></td>
 			</tr>
 			
 			<tr valign="top">
-			<th scope="row"><?php _e("Universal Button", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Universal Button", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<div class="addtoany_icon_size_large">
 					<label class="addtoany_override a2a_kit_size_32">
@@ -528,13 +528,19 @@ function A2A_SHARE_SAVE_options_page() {
 					<input name="A2A_SHARE_SAVE_button" value="NONE" type="radio"<?php if ( isset( $options['button'] ) && 'NONE' == $options['button'] ) echo ' checked="checked"'; ?> onclick="return confirm('<?php _e('This option will disable universal sharing. Are you sure you want to disable universal sharing?', 'add-to-any' ) ?>')" style="margin:9px 0;vertical-align:middle">
 					<span style="margin:0 9px;vertical-align:middle"><?php _e("None"); ?></span>
 				</label>
+				<br>
+				<label>
+					<input id="A2A_SHARE_SAVE_button_show_count" name="A2A_SHARE_SAVE_button_show_count" type="checkbox"<?php 
+						if ( isset( $options['button_show_count'] ) && $options['button_show_count'] == '1' ) echo ' checked="checked"'; ?> value="1">
+					<span style="margin-left:5px">Show count</span>
+				</label>
 				
 			</fieldset></td>
 			</tr>
 
 			<tr valign="top">
 			<th scope="row"><?php _e('Sharing Header', 'add-to-any'); ?></th>
-			<td><fieldset>
+			<td><fieldset id="addtoany_extra_section_sharing_header" class="addtoany_extra_section" role="region">
 				<label>
 					<input name="A2A_SHARE_SAVE_header" type="text" class="code" placeholder="<?php esc_attr_e( 'Share this:' ); ?>" size="50" value="<?php if ( isset( $options['header'] ) ) echo esc_attr( stripslashes( $options['header'] ) ); ?>" />
 				</label>
@@ -601,14 +607,14 @@ function A2A_SHARE_SAVE_options_page() {
 				
 				<br/><br/>
 				<div class="setting-description">
-					<?php _e("See <a href=\"widgets.php\" title=\"Theme Widgets\">Widgets</a> and <a href=\"options-general.php?page=add-to-any.php&action=floating\" title=\"AddToAny Floating Share Buttons\">Floating</a> for additional placement options. For advanced placement, see <a href=\"http://wordpress.org/plugins/add-to-any/faq/\">the FAQs</a>.", "add-to-any"); ?>
+					<?php _e("See <a href=\"widgets.php\" title=\"Theme Widgets\">Widgets</a> and <a href=\"options-general.php?page=add-to-any.php&action=floating\" title=\"AddToAny Floating Share Buttons\">Floating</a> for additional placement options. For advanced placement, see <a href=\"http://wordpress.org/plugins/add-to-any/faq/\">the FAQs</a>.", 'add-to-any'); ?>
 				</div>
 			</fieldset></td>
 			</tr>
 
 			<tr valign="top">
 			<th scope="row"><?php _e('Menu Options', 'add-to-any'); ?></th>
-			<td><fieldset>
+			<td><fieldset id="addtoany_extra_section_menu_options" class="addtoany_extra_section" role="region">
 				<label>
 					<input name="A2A_SHARE_SAVE_onclick" type="checkbox"<?php if ( isset( $options['onclick'] ) && $options['onclick'] == '1' ) echo ' checked="checked"'; ?> value="1"/>
 					<?php _e('Only show the universal share menu when the user <em>clicks</em> the universal share button', 'add-to-any'); ?>
@@ -619,17 +625,17 @@ function A2A_SHARE_SAVE_options_page() {
 					<?php _e('Show the title of the page within the universal share menu', 'add-to-any'); ?>
 				</label>
 				<label>
-					<p><?php _e("You can use AddToAny's Menu Styler to customize the colors of your universal share menu. When you're done, be sure to paste the generated code in the <a href=\"#\" onclick=\"document.getElementById('A2A_SHARE_SAVE_additional_js_variables').focus();return false\">Additional Options</a> box below.", "add-to-any"); ?></p>
+					<p><?php _e("You can use AddToAny's Menu Styler to customize the colors of your universal share menu. When you're done, be sure to paste the generated code in the <a href=\"#\" onclick=\"document.getElementById('A2A_SHARE_SAVE_additional_js_variables').focus();return false\">Additional JavaScript</a> box below.", 'add-to-any'); ?></p>
 				</label>
 				<p>
-					<a href="https://www.addtoany.com/buttons/share_save/menu_style/wordpress" class="button-secondary" title="<?php _e("Open the AddToAny Menu Styler in a new window", "add-to-any"); ?>" target="_blank" onclick="document.getElementById('A2A_SHARE_SAVE_additional_js_variables').focus(); document.getElementById('A2A_SHARE_SAVE_menu_styler_note').style.display='';"><?php _e("Open Menu Styler", "add-to-any"); ?></a>
+					<a href="https://www.addtoany.com/buttons/share_save/menu_style/wordpress" class="button-secondary" title="<?php _e("Open the AddToAny Menu Styler in a new window", 'add-to-any'); ?>" target="_blank" onclick="document.getElementById('A2A_SHARE_SAVE_additional_js_variables').focus(); document.getElementById('A2A_SHARE_SAVE_menu_styler_note').style.display='';"><?php _e("Open Menu Styler", 'add-to-any'); ?></a>
 				</p>
 			</fieldset></td>
 			</tr>
 
 			<tr valign="top">
-			<th scope="row"><?php _e('Additional Options', 'add-to-any'); ?></th>
-			<td><fieldset>
+			<th scope="row"><?php _e('Additional JavaScript', 'add-to-any'); ?></th>
+			<td><fieldset id="addtoany_extra_section_additional_javascript" class="addtoany_extra_section" role="region">
 				<p id="A2A_SHARE_SAVE_menu_styler_note" style="display:none">
 					<label for="A2A_SHARE_SAVE_additional_js_variables" class="updated">
 						<strong><?php _e("Paste the code from AddToAny's Menu Styler in the box below!", 'add-to-any'); ?></strong>
@@ -637,7 +643,7 @@ function A2A_SHARE_SAVE_options_page() {
 				</p>
 				<label for="A2A_SHARE_SAVE_additional_js_variables">
 					<p><?php _e('Below you can add special JavaScript code for AddToAny.', 'add-to-any'); ?>
-					<?php _e("Advanced users should explore AddToAny's <a href=\"https://www.addtoany.com/buttons/customize/wordpress\" target=\"_blank\">additional options</a>.", "add-to-any"); ?></p>
+					<?php _e("Advanced users should explore AddToAny's <a href=\"https://www.addtoany.com/buttons/customize/wordpress\" target=\"_blank\">additional options</a>.", 'add-to-any'); ?></p>
 				</label>
 				<p>
 					<textarea name="A2A_SHARE_SAVE_additional_js_variables" id="A2A_SHARE_SAVE_additional_js_variables" class="code" style="width: 98%; font-size: 12px;" rows="6" cols="50"><?php if ( isset( $options['additional_js_variables'] ) ) echo stripslashes( $options['additional_js_variables'] ); ?></textarea>
@@ -645,16 +651,28 @@ function A2A_SHARE_SAVE_options_page() {
 			</fieldset></td>
 			</tr>
 			<tr valign="top">
+			<th scope="row"><?php _e('Additional CSS', 'add-to-any'); ?></th>
+			<td><fieldset id="addtoany_extra_section_additional_css" class="addtoany_extra_section" role="region">
+				<label for="A2A_SHARE_SAVE_additional_css">
+					<p><?php _e('Below you can add special CSS code for AddToAny.', 'add-to-any'); ?>
+					<?php _e("Advanced users should explore AddToAny's <a href=\"https://www.addtoany.com/buttons/customize/wordpress\" target=\"_blank\">additional options</a>.", 'add-to-any'); ?></p>
+				</label>
+				<p>
+					<textarea name="A2A_SHARE_SAVE_additional_css" id="A2A_SHARE_SAVE_additional_css" class="code" style="width: 98%; font-size: 12px;" rows="6" cols="50"><?php if ( isset( $options['additional_css'] ) ) echo stripslashes( $options['additional_css'] ); ?></textarea>
+				</p>
+			</fieldset></td>
+			</tr>
+			<tr valign="top">
 			<th scope="row"><?php _e('Advanced Options', 'add-to-any'); ?></th>
-			<td><fieldset>
+			<td><fieldset id="addtoany_extra_section_advanced_options" class="addtoany_extra_section" role="region">
 				<label for="A2A_SHARE_SAVE_custom_icons">
 					<input name="A2A_SHARE_SAVE_custom_icons" id="A2A_SHARE_SAVE_custom_icons" type="checkbox"<?php if ( isset( $options['custom_icons'] ) && $options['custom_icons'] == 'url' ) echo ' checked="checked"'; ?> value="url"/>
 				<?php _e('Use custom icons. URL:', 'add-to-any'); ?>
 				</label>
 				<input name="A2A_SHARE_SAVE_custom_icons_url" type="text" class="code" size="50" style="vertical-align:middle" placeholder="//example.com/blog/uploads/addtoany/icons/custom/" value="<?php if ( isset( $options['custom_icons_url'] ) ) echo $options['custom_icons_url']; ?>" />
-				<input name="A2A_SHARE_SAVE_custom_icons_type" type="text" class="code" size="5" style="vertical-align:middle" maxlength="4" placeholder="png" value="<?php if ( isset( $options['custom_icons_type'] ) ) echo $options['custom_icons_type']; else echo 'png'; ?>" title="<?php esc_attr_e("Filename extension", "add-to-any"); ?>" />
+				<input name="A2A_SHARE_SAVE_custom_icons_type" type="text" class="code" size="5" style="vertical-align:middle" maxlength="4" placeholder="png" value="<?php if ( isset( $options['custom_icons_type'] ) ) echo $options['custom_icons_type']; else echo 'png'; ?>" title="<?php esc_attr_e("Filename extension", 'add-to-any'); ?>" />
 				<p class="description">
-					<?php _e("Specify the URL of the directory containing your custom icons. For example, a URL of <code>//example.com/blog/uploads/addtoany/icons/custom/</code> containing <code>facebook.png</code> and <code>twitter.png</code>. Be sure that custom icon filenames match the icon filenames in <code>plugins/add-to-any/icons</code>. For AddToAny's Universal Button, select Image URL and specify the URL of your AddToAny universal share icon (<a href=\"#\" onclick=\"document.getElementsByName('A2A_SHARE_SAVE_button_custom')[0].focus();return false\">above</a>).", "add-to-any"); ?>
+					<?php _e("Specify the URL of the directory containing your custom icons. For example, a URL of <code>//example.com/blog/uploads/addtoany/icons/custom/</code> containing <code>facebook.png</code> and <code>twitter.png</code>. Be sure that custom icon filenames match the icon filenames in <code>plugins/add-to-any/icons</code>. For AddToAny's Universal Button, select Image URL and specify the URL of your AddToAny universal share icon (<a href=\"#\" onclick=\"document.getElementsByName('A2A_SHARE_SAVE_button_custom')[0].focus();return false\">above</a>).", 'add-to-any'); ?>
 				</p>
 				<br/>
 				<label for="A2A_SHARE_SAVE_inline_css">
@@ -662,7 +680,7 @@ function A2A_SHARE_SAVE_options_page() {
 				<?php _e('Use default CSS', 'add-to-any'); ?>
 				</label>
 				<p class="description">
-					<?php _e("Only disable AddToAny's default stylesheet if you already have the necessary CSS code applied to your AddToAny buttons.", "add-to-any"); ?>
+					<?php _e("Only disable AddToAny's default stylesheet if you already have the necessary CSS code applied to your AddToAny buttons.", 'add-to-any'); ?>
 				</p>
 				<br/>
 				<label for="A2A_SHARE_SAVE_cache">
@@ -670,7 +688,7 @@ function A2A_SHARE_SAVE_options_page() {
 				<?php _e('Cache AddToAny locally with daily cache updates', 'add-to-any'); ?>
 				</label>
 				<p class="description">
-					<?php _e("Most sites should not use this option. By default, AddToAny loads asynchronously and most efficiently. Since many visitors will have AddToAny cached in their browser already, serving AddToAny locally from your site will be slower for those visitors. If local caching is enabled, be sure to set far future cache/expires headers for image files in your <code>uploads/addtoany</code> directory.", "add-to-any"); ?>
+					<?php _e("Most sites should not use this option. By default, AddToAny loads asynchronously and most efficiently. Since many visitors will have AddToAny cached in their browser already, serving AddToAny locally from your site will be slower for those visitors. If local caching is enabled, be sure to set far future cache/expires headers for image files in your <code>uploads/addtoany</code> directory.", 'add-to-any'); ?>
 				</p>
 			</fieldset></td>
 			</tr>
@@ -680,13 +698,13 @@ function A2A_SHARE_SAVE_options_page() {
 		
 		<?php if ( 'floating' == $current_screen ) : ?>
 		
-		<p><?php _e('AddToAny &quot;floating&quot; share buttons stay in a fixed position even when the user scrolls.', "add-to-any"); ?></p>
-		<p><?php _e('Large icons from your currently selected buttons are displayed in your floating bar(s). 3rd party buttons (Like, Tweet, etc.) are not displayed.', "add-to-any"); ?></p>
+		<p><?php _e('AddToAny &quot;floating&quot; share buttons stay in a fixed position even when the user scrolls.', 'add-to-any'); ?></p>
+		<p><?php _e('Large icons from your currently selected buttons are displayed in your floating bar(s). 3rd party buttons (Like, Tweet, etc.) are not displayed.', 'add-to-any'); ?></p>
 		
-		<h3><?php _e('Vertical Buttons', "add-to-any"); ?></h3>
+		<h3><?php _e('Vertical Buttons', 'add-to-any'); ?></h3>
 		<table class="form-table">
 			<tr valign="top">
-			<th scope="row"><?php _e("Placement", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Placement", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label><input type="radio" name="A2A_SHARE_SAVE_floating_vertical" value="left_docked"<?php if ( isset( $options['floating_vertical'] ) && 'left_docked' == $options['floating_vertical'] ) echo ' checked="checked"'; ?>> <?php _e('Left docked', 'add-to-any'); ?></label>
 				<br>
@@ -696,7 +714,7 @@ function A2A_SHARE_SAVE_options_page() {
 			</fieldset></td>
 			</tr>
 			<tr valign="top">
-			<th scope="row"><?php _e("Responsiveness", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Responsiveness", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label>
 					<input id="A2A_SHARE_SAVE_floating_vertical_responsive" name="A2A_SHARE_SAVE_floating_vertical_responsive" type="checkbox"<?php 
@@ -706,23 +724,23 @@ function A2A_SHARE_SAVE_options_page() {
 			</fieldset></td>
 			</tr>
 			<tr valign="top">
-			<th scope="row"><?php _e("Position", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Position", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label><input name="A2A_SHARE_SAVE_floating_vertical_position" type="number" step="1" value="<?php if ( isset( $options['floating_vertical_position'] ) ) echo $options['floating_vertical_position']; else echo '100'; ?>" class="small-text" /> pixels from top</label>
 			</fieldset></td>
 			</tr>
 			<tr valign="top">
-			<th scope="row"><?php _e("Offset", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Offset", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label><input name="A2A_SHARE_SAVE_floating_vertical_offset" type="number" step="1" value="<?php if ( isset( $options['floating_vertical_offset'] ) ) echo $options['floating_vertical_offset']; else echo '0'; ?>" class="small-text" /> pixels from left or right</label>
 			</fieldset></td>
 			</tr>
 		</table>
 			
-		<h3><?php _e('Horizontal Buttons', "add-to-any"); ?></h3>
+		<h3><?php _e('Horizontal Buttons', 'add-to-any'); ?></h3>
 		<table class="form-table">
 			<tr valign="top">
-			<th scope="row"><?php _e("Placement", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Placement", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label><input type="radio" name="A2A_SHARE_SAVE_floating_horizontal" value="left_docked"<?php if ( isset( $options['floating_horizontal'] ) && 'left_docked' == $options['floating_horizontal'] ) echo ' checked="checked"'; ?>> <?php _e('Left docked', 'add-to-any'); ?></label>
 				<br>
@@ -732,7 +750,7 @@ function A2A_SHARE_SAVE_options_page() {
 			</fieldset></td>
 			</tr>
 			<tr valign="top">
-			<th scope="row"><?php _e("Responsiveness", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Responsiveness", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label>
 					<input id="A2A_SHARE_SAVE_floating_horizontal_responsive" name="A2A_SHARE_SAVE_floating_horizontal_responsive" type="checkbox"<?php 
@@ -742,13 +760,13 @@ function A2A_SHARE_SAVE_options_page() {
 			</fieldset></td>
 			</tr>
 			<tr valign="top">
-			<th scope="row"><?php _e("Position", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Position", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label><input name="A2A_SHARE_SAVE_floating_horizontal_position" type="number" step="1" value="<?php if ( isset( $options['floating_horizontal_position'] ) ) echo $options['floating_horizontal_position']; else echo '0'; ?>" class="small-text" /> pixels from left or right</label>
 			</fieldset></td>
 			</tr>
 			<tr valign="top">
-			<th scope="row"><?php _e("Offset", "add-to-any"); ?></th>
+			<th scope="row"><?php _e("Offset", 'add-to-any'); ?></th>
 			<td><fieldset>
 				<label><input name="A2A_SHARE_SAVE_floating_horizontal_offset" type="number" step="1" value="<?php if ( isset( $options['floating_horizontal_offset'] ) ) echo $options['floating_horizontal_offset']; else echo '0'; ?>" class="small-text" /> pixels from bottom</label>
 			</fieldset></td>
@@ -767,7 +785,7 @@ function A2A_SHARE_SAVE_options_page() {
 	</form>
 	
 	<h2><?php _e('Like this plugin?','add-to-any'); ?></h2>
-	<p><?php _e('<a href="http://wordpress.org/extend/plugins/add-to-any/">Give it a good rating</a> on WordPress.org.','add-to-any'); ?></p>
+	<p><?php _e('<a href="https://wordpress.org/support/view/plugin-reviews/add-to-any#postform" target="_blank">Give it a 5 star rating</a> on WordPress.org.','add-to-any'); ?></p>
 	<p><?php _e('<a href="https://www.addtoany.com/share_save#title=WordPress%20Share%20Plugin%20by%20AddToAny.com&amp;url=http%3A%2F%2Fwordpress.org%2Fplugins%2Fadd-to-any%2F">Share it</a> and follow <a href="https://www.addtoany.com/">AddToAny</a> on <a href="https://www.facebook.com/AddToAny" target="_blank">Facebook</a> &amp; <a href="https://twitter.com/AddToAny" target="_blank">Twitter</a>.','add-to-any'); ?></p>
 	
 	<h2><?php _e('Need support?','add-to-any'); ?></h2>
@@ -886,7 +904,7 @@ function A2A_SHARE_SAVE_admin_head() {
 					// Special service options?
 					service_name = services_array[i].substr(7);
 					if (service_name == 'facebook_like' || service_name == 'twitter_tweet' || service_name == 'google_plusone' || service_name == 'google_plus_share' || service_name == 'pinterest_pin') {
-						if (service_name == 'twitter_tweet' || service_name == 'google_plusone' || service_name == 'google_plus_share' || service_name == 'pinterest_pin') {
+						if (service_name == 'google_plusone' || service_name == 'google_plus_share' || service_name == 'pinterest_pin') {
 							show_count_value = (jQuery('#' + services_array[i] + '_show_count').is(':checked')) ? '1' : '-1' ;
 							jQuery('#addtoany_admin_form').append('<input class="addtoany_hidden_options" name="addtoany_' + service_name + '_show_count" type="hidden" value="' + show_count_value + '"/>');
 						}
@@ -896,7 +914,7 @@ function A2A_SHARE_SAVE_admin_head() {
 							jQuery('#addtoany_admin_form').append('<input class="addtoany_hidden_options" name="addtoany_' + service_name + '_verb" type="hidden" value="' + fb_verb_value + '"/>');
 						}
 					// AddToAny counters
-					} else if ( jQuery.inArray( service_name, ['facebook', 'twitter', 'pinterest', 'linkedin', 'reddit'] ) > -1 ) {
+					} else if ( jQuery.inArray( service_name, ['facebook', 'pinterest', 'linkedin', 'reddit'] ) > -1 ) {
 						show_count_value = (jQuery('#' + services_array[i] + '_show_count').is(':checked')) ? '1' : '-1' ;
 						jQuery('#addtoany_admin_form').append('<input class="addtoany_hidden_options" name="addtoany_' + service_name + '_show_count" type="hidden" value="' + show_count_value + '"/>');
 					}
@@ -927,22 +945,26 @@ function A2A_SHARE_SAVE_admin_head() {
 				jQuery('#addtoany_services_sortable').find('.dummy').hide();
 				
 			if (this_service_is_special) {
-				if (this_service_name == 'facebook_like') {
+				if ('facebook_like' == this_service_name) {
 					if (service_options[this_service_name] && service_options[this_service_name].verb)
 						checked = ' selected="selected"';
 					special_options_html = '<select id="' + this_service.attr('id') + '_verb" name="' + this_service.attr('id') + '_verb">'
 						+ '<option value="like">Like</option>'
 						+ '<option' + checked + ' value="recommend">Recommend</option>'
 						+ '</select>';
+				} else if ('twitter_tweet' == this_service_name) {
+					// twitter_tweet doesn't provide counts anymore
 				} else {
-					// twitter_tweet & google_plusone & google_plus_share & pinterest_pin
+					// google_plusone & google_plus_share & pinterest_pin
 					if (service_options[this_service_name] && service_options[this_service_name].show_count) {
 						checked = ' checked="checked"';
 					}
 					special_options_html = '<label><input' + checked + ' id="' + this_service.attr('id') + '_show_count" name="' + this_service.attr('id') + '_show_count" type="checkbox" value="1"> Show count</label>';
 				}
 				
-				configurable_html = '<span class="down_arrow"></span><br style="clear:both"/><div class="special_options">' + special_options_html + '</div>';
+				if (special_options_html.length > 0) {
+					configurable_html = '<span class="down_arrow"></span><br style="clear:both"/><div class="special_options">' + special_options_html + '</div>';
+				}
 			}
 			
 			var icon_size = jQuery('input:radio[name=A2A_SHARE_SAVE_icon_size]:checked').val();
@@ -1018,12 +1040,12 @@ function A2A_SHARE_SAVE_admin_head() {
 		foreach ($active_services as $service) {
 			if ( $admin_services_saved )
 				$service = substr( $service, 7 ); // Remove a2a_wp_
-			$active_services_quoted .= '"' . esc_js( $service ) . '"';
+			$active_services_quoted .= json_encode( $service );
 			if ( $service != $active_services_last )
 				$active_services_quoted .= ',';
 			
 			// AddToAny counter enabled?
-			if ( in_array( $service, array( 'facebook', 'twitter', 'pinterest', 'linkedin', 'reddit' ) ) ) {
+			if ( in_array( $service, array( 'facebook', 'pinterest', 'linkedin', 'reddit' ) ) ) {
 				if ( isset( $_POST['addtoany_' . $service . '_show_count'] ) && $_POST['addtoany_' . $service . '_show_count'] == '1'
 					|| ! isset( $_POST['addtoany_' . $service . '_show_count'] )
 					&& isset( $options['special_' . $service . '_options'] )
@@ -1046,11 +1068,6 @@ function A2A_SHARE_SAVE_admin_head() {
 			|| ! isset( $_POST['addtoany_facebook_like_verb'] ) 
 			&& isset( $options['special_facebook_like_options'] ) && $options['special_facebook_like_options']['verb'] == 'recommend' ) {
 			?>service_options.facebook_like = {verb: 'recommend'};<?php
-		}
-		if ( isset( $_POST['addtoany_twitter_tweet_show_count'] ) && $_POST['addtoany_twitter_tweet_show_count'] == '1'
-			|| ! isset( $_POST['addtoany_twitter_tweet_show_count'] )
-			&& isset( $options['special_twitter_tweet_options'] ) && $options['special_twitter_tweet_options']['show_count'] == '1' ) {
-			?>service_options.twitter_tweet = {show_count: 1};<?php
 		}
 		if ( isset( $_POST['addtoany_google_plusone_show_count'] ) && $_POST['addtoany_google_plusone_show_count'] == '1'
 			|| ! isset( $_POST['addtoany_google_plusone_show_count'] )
@@ -1075,19 +1092,31 @@ function A2A_SHARE_SAVE_admin_head() {
 		
 		// Add/Remove Services button
 		jQuery('#addtoany_services_sortable .dummy:first').after('<li id="addtoany_show_services"><?php _e('Add/Remove Services', 'add-to-any'); ?> &#187;</li>');
-		jQuery('#addtoany_show_services').click(function(e){
+		jQuery('#addtoany_show_services').click(function(e) {
 			jQuery('#addtoany_services_selectable, #addtoany_services_info').slideDown('fast');
 			jQuery(this).fadeOut('fast');
 		});
 		
 		// Adjust the Add/Remove Services button for large or small icons
-		if ( jQuery('input:radio[name=A2A_SHARE_SAVE_icon_size]:checked').val() != '16' )
+		if ( jQuery('input:radio[name=A2A_SHARE_SAVE_icon_size]:checked').val() != '16' ) {
 			jQuery('#addtoany_show_services').addClass('addtoany_line_height_32');
+		}
 		
-		// TBD
-		jQuery('#addtoany_show_css_code').click(function(e){
-			jQuery('#addtoany_css_code').slideDown('fast');
-			jQuery(this).fadeOut('fast');
+		// Hide each 'extra' section if it does not have a textarea with a value
+		jQuery('.addtoany_extra_section:not(:has(textarea:not(:empty)))').hide()
+			// Keep it accessible
+			.attr('aria-expanded', 'false')
+			.attr('tabindex', '-1')
+			.each(function(index) { 
+				// Insert an accessible 'show section' button
+				jQuery(this).after('<fieldset><button class="addtoany_show_more_button button" type="button" aria-controls="' + jQuery(this).attr('id') + '"><span class="dashicons dashicons-arrow-down"></span></button></fieldset>');
+			});
+		// Handle click on 'show section' button
+		jQuery('.addtoany_extra_section').next('fieldset').find('button').click(function(e) {
+			jQuery(this).hide('fast');
+			jQuery(this).parent().prev('fieldset').slideDown('fast')
+				.attr('aria-expanded', 'true')
+				.focus();
 		});
 	});
 	--></script>
@@ -1128,6 +1157,22 @@ function A2A_SHARE_SAVE_admin_head() {
 	li#addtoany_show_services:hover{border:1px solid #AAA;}
 	#addtoany_services_info{clear:left;display:none;margin:10px;}
 	
+	/* No outline during ARIA focus */
+	.addtoany_extra_section {
+		outline: 0;
+	}
+	/* Adjust position of arrow icon on show more button */
+	.addtoany_show_more_button .dashicons {
+		position: relative;
+		right: 1px;
+		top: 2px;
+	}
+	@media screen and (max-width: 782px) {
+		.addtoany_show_more_button .dashicons {
+			top: 0px;
+		}
+	}
+	
 	.a2a_kit_size_32.addtoany_override .a2a_svg { 
 		border-radius: 4px;
 		display:inline-block;
@@ -1135,8 +1180,6 @@ function A2A_SHARE_SAVE_admin_head() {
 		vertical-align:middle;
 		width: 32px;
 	}
-	
-	#addtoany_template_button_code, #addtoany_css_code{display:none;}
 	
 	#A2A_SHARE_SAVE_reset_options{color:red;margin-left: 15px;}
 	</style>
