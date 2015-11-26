@@ -17,5 +17,5 @@ CREATE TABLE `wp_blogs` (
   KEY `lang_id` (`lang_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 LOCK TABLES `wp_blogs` WRITE;
-INSERT INTO `wp_blogs` VALUES ('1','1','prueba-git.wibidei.com','/','2015-06-20 19:09:52','0000-00-00 00:00:00','1','0','0','0','0','0'), ('2','1','prueba-git.wibidei.com','/es/','2015-06-20 19:17:53','2015-11-09 00:50:33','1','0','0','0','0','0');
+INSERT INTO `wp_blogs` VALUES ('1','1','prueba-git.wibidei.com','/','2015-06-20 19:09:52','0000-00-00 00:00:00','1','0','0','0','0','0'), ('2','1','prueba-git.wibidei.com','/es/','2015-06-20 19:17:53','2015-11-25 23:11:01','1','0','0','0','0','0');
 UNLOCK TABLES;
